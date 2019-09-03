@@ -4,7 +4,10 @@
     "license": "MIT",
     "scripts": {},
     "private": true,
-    "dependencies": {},
+    "dependencies": {
+        "gulp-plumber": "^1.2.1",
+        "gulp-rigger": "^0.5.8"
+    },
     "devDependencies": {
         "browser-sync": "^2.26.3",
         "gulp": "^4.0.0",
@@ -18,12 +21,14 @@
         "gulp-iconfont-css": "^3.0.0",
         "gulp-if": "^2.0.2",
         "gulp-notify": "^3.2.0",
+        "gulp-pagebuilder": "^0.1.4",
         "gulp-rename": "^1.4.0",
         "gulp-sass": "^4.0.2",
         "gulp-shorthand": "^1.1.0",
         "gulp-size": "^3.0.0",
         "gulp-sourcemaps": "^2.6.5",
-        "gulp-uncss": "^1.0.6"
+        "gulp-uncss": "^1.0.6",
+        "jquery": "^3.4.1"
     },
     "main": "gulpfile.js",
     "author": "",

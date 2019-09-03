@@ -1,5 +1,3 @@
-'use strict';
-
 const gulp = require('gulp'),
     sass = require('gulp-sass'),
     sourcemaps = require('gulp-sourcemaps'),
@@ -9,25 +7,72 @@ const gulp = require('gulp'),
     size = require('gulp-size'),
     changed = require('gulp-changed'),
     browserSync = require('browser-sync').create(),
-    dir = { src: './assets/sass/', dist: './assets/css/', libs: [] };
+    plumber = require('gulp-plumber'),
+    rigger = require('gulp-rigger'),
+    dir = { src: './assets/sass/', dist: './assets/css/' };
 
-dir.sass = [
-    dir.src + '*.scss',
-    dir.src + '**/*.scss',
-    '!' + dir.src + '_*.scss',
-    '!' + dir.src + '**/_*.scss',
-];
-dir.sass_watch = [
-    dir.src + '*.scss',
-    dir.src + '**/*.scss',
-];
+const path = {
+    build: { 
+        html: './prod/',
+        css: dir.dist,
+    },
+    src: { 
+        html: [
+            './*.html',
+            './dev/*.html',
+        ], 
+        style: [
+            dir.src + '*.scss',
+            dir.src + '**/*.scss',
+            '!' + dir.src + '_*.scss',
+            '!' + dir.src + '**/_*.scss',
+        ], 
+    },
+    watch: { 
+        html: [
+            './*.html',
+            './dev/*.html',
+        ],
+        html_prod: [
+            './prod/*.html',
+        ],
+        style: [
+            dir.src + '*.scss',
+            dir.src + '**/*.scss',
+        ],
+    },
+};
 
-function scssTask() {
-    return gulp.src(dir.sass)
+const config = {
+    server: {
+        baseDir: "./"
+    },
+    port: 8080,
+    open: true,
+    notify: true,
+    logLevel: 'silent',
+};
+
+gulp.task('browserSync', function() {
+    browserSync.init(config);
+});
+
+gulp.task('html:build', function(done) {
+    gulp.src(path.src.html) 
+        .pipe(plumber())
+        .pipe(rigger())
+        .pipe(gulp.dest(path.build.html))
+        .pipe(browserSync.reload({ stream: true }));
+    done();
+});
+
+gulp.task('style:build', function(done) {
+    return gulp.src(path.src.style)
+        .pipe(plumber())
         .pipe(changed(dir.dist))
         .pipe(sourcemaps.init())
         .pipe(sass({ outputStyle: 'expanded' }).on('error', sass.logError))
-        .pipe(autoprefixer({ browsers: ['last 4 versions', '> .5%', 'ie 8', 'ie 7', 'iOS 7'] }))
+        .pipe(autoprefixer({ overrideBrowserslist: ['last 4 versions', '> .5%', 'ie 8', 'ie 7', 'iOS 7'] }))
         .pipe(gulp.dest(dir.dist))
 
         .pipe(cleancss())
@@ -37,29 +82,18 @@ function scssTask() {
         .pipe(sourcemaps.write('./', { includeContent: false, mapSources: false }))
         .pipe(gulp.dest(dir.dist))
 
-        .pipe(browserSync.stream())
+        .pipe(browserSync.reload({ stream: true }))
         .pipe(size());
-}
+    done();
+});
 
-function browserSyncTask() {
-    browserSync.init({
-        server: {
-            baseDir: "./"
-        },
-        port: 8080,
-        open: true,
-        notify: true,
-        logLevel: 'silent'
-    });
+gulp.task('build', gulp.series('html:build', 'style:build'));
 
-    gulp.watch("./*.html").on('change', browserSync.reload);
-}
+gulp.task('watch', function() {
+    gulp.watch(path.watch.html, gulp.series('html:build'));
+    gulp.watch(path.watch.style, gulp.series('style:build'));
 
-function watchTask() {
-    gulp.watch(dir.sass_watch, scssTask);
-}
+    gulp.watch('./prod/*.html').on('change', browserSync.reload);
+});
 
-gulp.task('scss', scssTask);
-gulp.task('watch', watchTask);
-
-gulp.task('default', gulp.parallel(watchTask, browserSyncTask));
+gulp.task('default', gulp.series('build', gulp.parallel('browserSync', 'watch')));
